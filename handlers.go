@@ -7,8 +7,6 @@ import (
 	"strconv"
 )
 
-//Enrutamientos
-
 func createPersona(w http.ResponseWriter, r *http.Request) {
 
 	///Cuerpo de la socilitud para bajarlo a una variable
@@ -28,43 +26,15 @@ func createPersona(w http.ResponseWriter, r *http.Request) {
 	}
 
 	///La persona es ingresada en la bdd, y el id lo usamos para poder enviarlo en la response
-	id := insertarPersonaEnLaDb(aux)
+	id, errorcito := insertarPersonaEnLaDb(aux)
+
+	if errorcito != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
 
 	aux.ID = id
-
 	encoder := json.NewEncoder(w)
 	encoder.Encode(aux)
-
-}
-
-func getPersonas(w http.ResponseWriter, _ *http.Request) {
-	// Aquí implementa la lógica para para obtener todas las personas
-	var personasExtendidas []PersonaExt
-
-	for i := 0; i < len(PersonasDB); i++ {
-		countryInfo, err := getInfoCountry(PersonasDB[i].CountryCode)
-		if err != nil {
-			http.Error(w, "Error al obtener información del país", http.StatusInternalServerError)
-			return
-		}
-
-		personasExtendidas = append(personasExtendidas, PersonaExt{
-			Persona:     PersonasDB[i],
-			CountryInfo: countryInfo,
-		})
-	}
-
-	jsonResponse, err := json.Marshal(personasExtendidas)
-	if err != nil {
-		http.Error(w, "Error al serializar personas", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = w.Write(jsonResponse)
-	if err != nil {
-		http.Error(w, "Error al escribir la respuesta", http.StatusInternalServerError)
-		return
-	}
 }
 
 func getPerson(w http.ResponseWriter, r *http.Request) {
@@ -73,8 +43,12 @@ func getPerson(w http.ResponseWriter, r *http.Request) {
 
 	idComoInt, _ := strconv.Atoi(idPersona)
 
-	persona := ObtenerPersona(idComoInt)
+	persona, err := ObtenerPersona(idComoInt)
 
+	if err != nil {
+		fmt.Println(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+	}
 	encoder := json.NewEncoder(w)
 	encoder.Encode(persona)
 }
@@ -90,14 +64,73 @@ func updatePersona(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	personaNueva, errorcito := editarPersonaEnLaDb(personaAux.ID, personaAux.Edad, personaAux.Nombre, personaAux.Apellido, personaAux.CountryCode)
 
-	editarPersonaEnLaDb(personaAux.ID, personaAux.Edad, personaAux.Nombre, personaAux.Apellido, personaAux.CountryCode)
+	if errorcito != nil {
+		fmt.Println("ERROR: " + errorcito.Error())
+		w.WriteHeader(http.StatusBadRequest)
+	}
 
 	encoder := json.NewEncoder(w)
-	encoder.Encode(personaAux)
-
+	encoder.Encode(personaNueva)
 }
 
-func deletePersona(w http.ResponseWriter, r *http.Request) {
-	// Aquí implementa la lógica para eliminar una persona
+func DeletePerson(w http.ResponseWriter, r *http.Request) {
+
+	idPersona := r.PathValue("id")
+
+	idComoInt, _ := strconv.Atoi(idPersona)
+
+	err := eliminarPersona(idComoInt)
+	if err != nil {
+
+		fmt.Println(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	w.WriteHeader(http.StatusOK)
 }
+
+// Listar todas las personas de La bdd
+// func getPersonas(w http.ResponseWriter, _ *http.Request) { ////POCO EFICIENTE
+// 	// Aquí implementa la lógica para para obtener todas las personas
+// 	mapaInfoCountry:=make(map[string]CountryInfo)
+// 	var personasExtendidas[]PersonaExt
+// 	var countryInfo CountryInfo
+//     var errorcito error
+
+// 	for i := 0; i < len(PersonasDB); i++ {
+
+// 		_,ok:=mapaInfoCountry[PersonasDB[i].CountryCode]
+// 		///Si la llave (osea el country code No existe) llamamos a la api
+
+// 		if !ok {
+// 		    countryInfo, errorcito = getInfoCountry(PersonasDB[i].CountryCode)
+// 		    if errorcito != nil {
+// 				http.Error(w, "Error al obtener información del país", http.StatusInternalServerError)
+// 				return
+// 			}
+// 			mapaInfoCountry[PersonasDB[i].CountryCode]=countryInfo
+// 		}
+
+// 		countryCodePersona:=PersonasDB[i].CountryCode
+
+// 		countryInfoPersona,ok:=mapaInfoCountry[countryCodePersona]
+
+// 		personasExtendidas=append(personasExtendidas, PersonaExt{
+// 			Persona: PersonasDB[i],
+// 			CountryInfo: countryInfoPersona,
+// 		})
+// 	}
+
+// 	jsonResponse, err := json.Marshal(personasExtendidas)
+// 	if err != nil {
+// 		http.Error(w, "Error al serializar personas", http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	_, err = w.Write(jsonResponse)
+// 	if err != nil {
+// 		http.Error(w, "Error al escribir la respuesta", http.StatusInternalServerError)
+// 		return
+// 	}
+// }

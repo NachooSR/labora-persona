@@ -47,15 +47,19 @@ type CountryInfo struct{
 }
 
 
-//Funcion que recibe el codigo de la persona y devuelve la informacion del mismo Pais
+
+
 func getInfoCountry(codeCountry string)(CountryInfo,error){
      
+	
 	url:= fmt.Sprintf("https://restcountries.com/v3.1/alpha/%s",codeCountry)
 	resp,err:=http.Get(url)
 
 	if(err!=nil){
 		return CountryInfo{}, fmt.Errorf("ERROR: %s",resp.Status)
 	}
+
+	defer resp.Body.Close()
 
 	var countryRTA CountryRTA
 
