@@ -2,7 +2,7 @@ package main
 
 type Persona struct {
 	ID int `json: "id"`
-	Nombre string `json: "nombre"`
+	Nombre string `json: "nombre"` 
 	Apellido string `json: "apellido"`
 	Edad int `json: "edad"`
 	CountryCode string  `json: "countryCode"`

@@ -83,7 +83,6 @@ func editarPersonaEnLaDb(id, edad int, nombre, apellido, countryCode string)(*Pe
 	if err!=nil {
 		return nil,err
 	}
-	
 	///Encontramos a la persona y la guardamos en una auxiliar para mantener sus datos
 	personaAux=personaAuxExtendida.Persona
     
