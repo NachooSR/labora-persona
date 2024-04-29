@@ -20,7 +20,7 @@ type PersonaExt struct {
 
 var DB *sql.DB
 
-func initDB() {
+func initDb() {
 	var err error
 	// Leer variables de entorno
 	dbUser := os.Getenv("DB_USER")
