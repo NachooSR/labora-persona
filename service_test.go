@@ -36,6 +36,7 @@ func Test_insertarPersonaEnLaDb(t *testing.T) {
 	idIngresado, err := insertarPersonaEnLaDb(personaAux)
 
 	//En mi db hay 3 registros ingresados por lo que la siguiente persona tiene que tener Id=4
+	//**************CORREGIR HARDCODEO************************//
 	if err != nil || idIngresado != 4 {
 		t.Fatalf("La persona no se pudo ingresar, ocurrio un error: %v", err)
 		return

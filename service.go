@@ -7,115 +7,102 @@ import (
 	//"net/http"
 
 	_ "github.com/lib/pq"
-	
 )
 
 ///El service es el intermediario entre la bdd y los handlers
 
-type PersonaExt struct{
+type PersonaExt struct {
 	Persona
 	CountryInfo
 }
 
-
 var DB *sql.DB
 
-func initDb(){
+func initDb() {
 	var err error
-	DB,err=sql.Open("postgres","user=postgres dbname=personas password=bocajuniors,2022 host=localhost sslmode=disable port=5432")
-	if err!=nil {
+	DB, err = sql.Open("postgres", "user=postgres dbname=personas password=bocajuniors,2022 host=localhost sslmode=disable port=5432")
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 }
 
-
-
-//Inserta una persona ya cargada en la db, con un Id Autoincremental
-func insertarPersonaEnLaDb(persona Persona) (int,error) {
+// Inserta una persona ya cargada en la db, con un Id Autoincremental
+func insertarPersonaEnLaDb(persona Persona) (int, error) {
 
 	var idIngresado int
 
-	errorcito:=DB.QueryRow("INSERT into personas (nombre,apellido,edad,country_code) VALUES ($1, $2, $3, $4) RETURNING id;" ,persona.Nombre,persona.Apellido,persona.Edad,persona.CountryCode).Scan(&idIngresado)
-	
-	if errorcito!=nil {
+	errorcito := DB.QueryRow("INSERT into personas (nombre,apellido,edad,country_code) VALUES ($1, $2, $3, $4) RETURNING id;", persona.Nombre, persona.Apellido, persona.Edad, persona.CountryCode).Scan(&idIngresado)
+
+	if errorcito != nil {
 		return 0, errorcito
 	}
-	return idIngresado,nil
+	return idIngresado, nil
 }
 
+// Obtener una sola persona de la bdd buscada por su ID
+func ObtenerPersona(id int) (PersonaExt, error) {
 
-
-//Obtener una sola persona de la bdd buscada por su ID
-func ObtenerPersona(id int)(PersonaExt,error){
-
-    ///Persona auxiliar
+	///Persona auxiliar
 	var personita_aux Persona
 
-	err:=DB.QueryRow("SELECT id,nombre,apellido,edad,country_code FROM personas WHERE id =$1",id).Scan(&personita_aux.ID,&personita_aux.Nombre,&personita_aux.Apellido,&personita_aux.Edad,&personita_aux.CountryCode)
+	err := DB.QueryRow("SELECT id,nombre,apellido,edad,country_code FROM personas WHERE id =$1", id).Scan(&personita_aux.ID, &personita_aux.Nombre, &personita_aux.Apellido, &personita_aux.Edad, &personita_aux.CountryCode)
 
-	if err!=nil {
-		return PersonaExt{},err
+	if err != nil {
+		return PersonaExt{}, err
 	}
 
-	infoCountry,errorcito:=getInfoCountry(personita_aux.CountryCode)
-	if errorcito!=nil{
+	infoCountry, errorcito := getInfoCountry(personita_aux.CountryCode)
+	if errorcito != nil {
 		fmt.Println(errorcito)
-		return PersonaExt{},errorcito
+		return PersonaExt{}, errorcito
 	}
 
 	return PersonaExt{
-		Persona: personita_aux,
+		Persona:     personita_aux,
 		CountryInfo: infoCountry,
-	},nil
+	}, nil
 }
 
-
-
-
-func editarPersonaEnLaDb(id, edad int, nombre, apellido, countryCode string)(*Persona,error) {
+func editarPersonaEnLaDb(id, edad int, nombre, apellido, countryCode string) (*Persona, error) {
 
 	var personaAux Persona
 
 	///Reciclamos la funcion que tenemos
-	personaAuxExtendida,err:=ObtenerPersona(id)
-    
-	if err!=nil {
-		return nil,err
+	personaAuxExtendida, err := ObtenerPersona(id)
+
+	if err != nil {
+		return nil, err
 	}
 	///Encontramos a la persona y la guardamos en una auxiliar para mantener sus datos
-	personaAux=personaAuxExtendida.Persona
-    
+	personaAux = personaAuxExtendida.Persona
+
 	//Si alguno de los parametros vino con valores lo reemplazamos en la variable auxiliar
-	if nombre!="" {
-	 personaAux.Nombre=nombre	
-    }
-	if apellido!="" {
-		personaAux.Apellido=apellido	
+	if nombre != "" {
+		personaAux.Nombre = nombre
 	}
-	if edad!=0 {
-		personaAux.Edad=edad	
+	if apellido != "" {
+		personaAux.Apellido = apellido
 	}
-	if countryCode!="" {
-		personaAux.CountryCode=countryCode	
+	if edad != 0 {
+		personaAux.Edad = edad
+	}
+	if countryCode != "" {
+		personaAux.CountryCode = countryCode
 	}
 
-	_,err=DB.Exec("UPDATE personas SET nombre=$1 ,apellido=$2,edad=$3,country_code=$4 WHERE id=$5",personaAux.Nombre,personaAux.Apellido,personaAux.Edad,personaAux.CountryCode,id)
-    if(err!=nil){
-		return nil,err
+	_, err = DB.Exec("UPDATE personas SET nombre=$1 ,apellido=$2,edad=$3,country_code=$4 WHERE id=$5", personaAux.Nombre, personaAux.Apellido, personaAux.Edad, personaAux.CountryCode, id)
+	if err != nil {
+		return nil, err
 	}
-	return &personaAux,nil
+	return &personaAux, nil
 }
 
+func eliminarPersona(id int) error {
 
-
-func eliminarPersona(id int)error{
-  
-	_,err:=DB.Exec("DELETE FROM personas WHERE id=$1",id)
-	if err!=nil {
+	_, err := DB.Exec("DELETE FROM personas WHERE id=$1", id)
+	if err != nil {
 		return err
 	}
 	return nil
 }
-
-
