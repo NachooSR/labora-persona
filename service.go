@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"os"
+
 	//"encoding/json"
 	"fmt"
 	//"net/http"
@@ -18,12 +20,21 @@ type PersonaExt struct {
 
 var DB *sql.DB
 
-func initDb() {
+func initDB() {
 	var err error
-	DB, err = sql.Open("postgres", "user=postgres dbname=personas password=bocajuniors,2022 host=localhost sslmode=disable port=5432")
+	// Leer variables de entorno
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+
+	// Usar las variables de entorno en la cadena de conexión
+	connectionString := fmt.Sprintf("user=%s dbname=%s host=%s sslmode=disable password=%s port=%s", dbUser, dbName, dbHost, dbPassword, dbPort)
+	DB, err = sql.Open("postgres", connectionString)
 	if err != nil {
-		fmt.Println(err)
-		return
+		fmt.Println("Error en la conexión a la base de datos")
+		panic(err)
 	}
 }
 
